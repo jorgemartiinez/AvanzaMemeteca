@@ -5,6 +5,15 @@
 import { ref } from 'vue';
 
 import { onClickOutside } from '@vueuse/core';
+import { useStoreAuth } from '../../stores/storeAuth';
+
+
+/*
+  store auth
+*/
+
+const storeAuth = useStoreAuth();
+
 
 /*
   mobile nav
@@ -29,7 +38,7 @@ onClickOutside(navbarMenuRef, (event) => (showMobileNav.value = false), {
 
 const logout = () => {
   showMobileNav.value = false;
-  //   storeAuth.logoutUser();
+   storeAuth.logoutUser();
 };
 </script>
 
@@ -65,7 +74,7 @@ const logout = () => {
         ref="navbarMenuRef"
       >
         <div class="navbar-start"></div>
-        <div class="navbar-end">
+        <div class="navbar-end" v-if="storeAuth.user.id">
           <RouterLink
             @click="showMobileNav = false"
             to="/"
@@ -84,7 +93,16 @@ const logout = () => {
             ⬆️ Upload
           </RouterLink>
 
-          <button class="button is-small is-danger mt-2 ml-3">👋 Log out</button>
+          <RouterLink
+            @click="showMobileNav = false"
+            to="/myImages"
+            class="navbar-item"
+            active-class="is-active"
+          >
+           🖼️ My Images
+          </RouterLink>
+
+          <button class="button is-small is-danger mt-2 ml-3" @click="logout" v-if="storeAuth.user.id">🧑 {{ storeAuth.user.email }} 👋 Log out</button>
         </div>
       </div>
     </div>
