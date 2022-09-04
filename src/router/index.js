@@ -8,35 +8,40 @@ import MyImagesView from '@/views/MyImagesView.vue';
 // stores
 import { useStoreAuth } from '@/stores/storeAuth.js';
 
+const routes = [
+  {
+    path: '/',
+    name: 'home',
+    component: ImageView
+  },
+  {
+    path: '/upload',
+    name: 'upload',
+    component: UploadImageView
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView
+  },
+  {
+    path: '/myImages',
+    name: 'myImages',
+    component: MyImagesView
+  },
+]
+
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: ImageView
-    },
-    {
-      path: '/upload',
-      name: 'upload',
-      component: UploadImageView
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: LoginView
-    },
-    {
-      path: '/myImages',
-      name: 'myImages',
-      component: MyImagesView
-    },
-  ]
+  history: createWebHistory(),
+  routes
 })
 
 router.beforeEach(async (to, from) => {
+console.log("🚀 ~ file: index.js ~ line 38 ~ router.beforeEach ~ to", to)
 
   const storeAuth = useStoreAuth();
+  
+  console.log(`de user data `, storeAuth.user.id)
 
   if(!storeAuth.user.id && to.name !== 'login') return { name: 'login' }
 

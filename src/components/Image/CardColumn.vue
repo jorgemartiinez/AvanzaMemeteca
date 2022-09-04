@@ -35,18 +35,18 @@ const storeImages = useStoreImages();
 
 const deleteImage = (img) => {
   if(window.confirm(`Are you sure that you want to delete the image with the title ${img.title}?`))
-  storeImages.delete(img.path);
+  storeImages.delete(img);
 };
 </script>
 
 <template>
   <div :class="columnClass">
     <div class="card">
-      <div class="card-image">
+      <div class="card-image" :title="`Uploaded by ${image.userEmail}`">
         <figure class="image is-3by2">
           <img
             class="card-img-src"
-            :src="image.url"
+            :src="image.downloadUrl"
             alt="imgAlt"
           />
         </figure>
@@ -57,7 +57,7 @@ const deleteImage = (img) => {
       <div class="actions">
         <button
           class="button is-danger is-small"
-          title="Eliminar imagen"
+          title="Delete image"
           @click="deleteImage(image)"
           v-if="storeAuth.user.id == image.userId"
         >
@@ -67,8 +67,8 @@ const deleteImage = (img) => {
         </button>
         <a
           class="button is-info is-small"
-          title="Descargar imagen"
-          :href="image.url"
+          title="Download image"
+          :href="image.downloadUrl"
           target="_blank"
         >
           <span class="icon is-small">

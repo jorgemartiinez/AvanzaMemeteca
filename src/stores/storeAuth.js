@@ -33,7 +33,6 @@ export const useStoreAuth = defineStore('storeAuth', {
     },
 
     async loginUser(credentials) {
-
       try {
         await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
         toastr.success('Welcome to Avanza Memeteca 👋');

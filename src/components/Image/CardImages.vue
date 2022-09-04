@@ -29,6 +29,7 @@ const storeImages = useStoreImages();
 const imageArrayStoreRef =  computed( () => (props.getMethod === 'all') ? storeImages.images : storeImages.userImages)
 
 onMounted(() => {
+  console.log('on mounted')
     if(props.getMethod === 'all')
         storeImages.getAll();
     else if(props.getMethod === 'user')
@@ -41,7 +42,7 @@ onMounted(() => {
     <div class="columns is-multiline">
       <ProgressBar v-if="storeImages.loading" />
       <template
-        v-for="(image, i) in imageArrayStoreRef"
+        v-for="(image, i) of imageArrayStoreRef"
         :key="i"
       >
         <CardColumn :image="image" />
@@ -49,7 +50,7 @@ onMounted(() => {
     </div>
 
     <div v-if="!imageArrayStoreRef.length && !storeImages.loading" class="is-size-4 has-text-centered is-family-monospace py-6">
-        No images yet uploaded 👀...
+        No images uploaded yet 👀...
         <a class="link" @click="$router.push('/upload')"> Try uploading one!</a>
       </div>
   </div>

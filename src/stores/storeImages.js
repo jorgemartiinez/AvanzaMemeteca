@@ -5,8 +5,9 @@ import { useToastr } from '@/use/useToastr';
 import { uuid } from 'vue3-uuid';
 // firebase
 import { ref as firebaseRef, uploadBytes, list, listAll, getDownloadURL, getMetadata, deleteObject } from 'firebase/storage';
-import { storage } from '@/js/firebase';
+import { storage, db } from '@/js/firebase';
 import { useStoreAuth } from './storeAuth';
+import { addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 
 const rootRef = firebaseRef(storage, '/');
 const toastr = useToastr();
@@ -33,6 +34,10 @@ const getChildImages = async (childRefs) => {
   return imagesStorage;
 };
 
+let getAllImagesSnapshot = null;
+
+let limit = 10;
+
 export const useStoreImages = defineStore({
   id: 'images',
   state: () => ({
@@ -42,71 +47,70 @@ export const useStoreImages = defineStore({
   }),
   actions: {
     async getAll() {
-      // TODO solución para no cargar siempre storage
-      // if (this.images.length > 0) return;
-      let imagesStorage = [];
+      if(this.images.length > 0) return;
       this.loading = true;
-
       try {
-        const res = await listAll(rootRef);
-        console.log("🚀 ~ file: storeImages.js ~ line 52 ~ getAll ~ res", res)
-
-        for (const folderRef of res.prefixes) {
-          const childRefs = await listAll(firebaseRef(storage, `/${folderRef.fullPath}`));
-          const childImages = await getChildImages(childRefs);
-          console.log('🚀 ~ file: storeImages.js ~ line 55 ~ res.prefixes.forEach ~ childImages', childImages);
-          imagesStorage = imagesStorage.concat(childImages);
-          console.log('🚀 ~ file: storeImages.js ~ line 57 ~ res.prefixes.forEach ~ imagesStorage', imagesStorage);
-        }
-      } catch (err) {
-        console.error(err);
+        getAllImagesSnapshot = onSnapshot(query(collection(db, 'images'), orderBy('date', 'desc')), (querySnapshot) => {
+          console.log("🚀 ~ file: storeImages.js ~ line 53 ~ getAllImagesSnapshot=onSnapshot ~ querySnapshot", querySnapshot)
+          let images = [];
+          querySnapshot.forEach((doc) => {
+            images.push({ id: doc.id, ...doc.data() });
+          });
+          this.images = images;
+        });
+      } catch (error) {
+        console.error('error at getAll()', error);
         toastr.error();
       }
-
-      console.log('🚀 ~ file: storeImages.js ~ line 63 ~ res.prefixes.forEach ~ imagesStorage', imagesStorage);
-      this.images = imagesStorage;
       setTimeout(() => (this.loading = false), 800);
     },
     async getUserImages() {
+      if(this.getUserImages.length > 0) return;
       const storeAuth = useStoreAuth();
-      const userId = storeAuth.user.id;
-
-      const userImagesRef = firebaseRef(storage, `/${userId}`);
-
+      this.loading = true;
+      let images = [];
       try {
-        const childRefs = await listAll(userImagesRef);
-        this.userImages = await getChildImages(childRefs);
-      } catch (err) {
-        console.error(err);
+        // no snapshot here for the moment
+        const querySnapshot = await getDocs(query(collection(db, 'images'), orderBy('date', 'desc'), where('userId', '==', storeAuth.user.id)));
+
+        querySnapshot.forEach((doc) => {
+          images.push({ id: doc.id, ...doc.data() });
+        });
+      } catch (error) {
+        console.error('error at getUserImages()', error);
         toastr.error();
       }
+      this.userImages = images;
       setTimeout(() => (this.loading = false), 800);
     },
-    async delete(imagePath) {
+    async delete(image) {
       // Create a reference to the file to delete
-      const deleteRef = firebaseRef(storage, imagePath);
+      const deleteRef = firebaseRef(storage, image.path);
 
-      // Delete the file
-      await deleteObject(deleteRef)
+      Promise.all([deleteObject(deleteRef), deleteDoc(doc(db, 'images', image.id))])
         .then((res) => {
-          console.log('res', res);
-          // File deleted successfully
+          // the user images are not in the snapshot
+          this.userImages = this.images.filter((img) => img.id !== image.id);
           toastr.success();
         })
         .catch((error) => {
           console.error(error);
           toastr.error();
-          // Uh-oh, an error occurred!
         });
     },
     async upload(imageParams) {
       this.loading = true;
 
       const storeAuth = useStoreAuth();
-
       const userId = storeAuth.user.id;
 
-      const storageRef = firebaseRef(storage, `${userId}/${uuid.v4()}`);
+      const filename = uuid.v4();
+
+      // url to the user folder/name (id)
+      const newImagePath = `${userId}/${filename}`;
+
+      const storageRef = firebaseRef(storage, newImagePath);
+
       const metadata = {
         customMetadata: {
           title: imageParams.title,
@@ -115,7 +119,26 @@ export const useStoreImages = defineStore({
       };
 
       try {
+        // image storage upload
         const snapshot = await uploadBytes(storageRef, imageParams.file, metadata);
+
+        // obtain the download url for store en database
+        const childStorageRef = firebaseRef(storage, snapshot.ref.fullPath);
+        const downloadUrl = await getDownloadURL(childStorageRef);
+
+        // save the image data on firestore
+        let newImageDoc = {
+          title: imageParams.title,
+          userId: userId,
+          userEmail: storeAuth.user.email,
+          downloadUrl: downloadUrl,
+          date: new Date().getTime(),
+          path: newImagePath
+        }
+        const docRef = await addDoc(collection(db, 'images'), newImageDoc);
+
+        this.userImages.push(newImageDoc)
+
         toastr.success();
       } catch (err) {
         console.error(err);
@@ -125,6 +148,8 @@ export const useStoreImages = defineStore({
     },
     clear() {
       this.images = [];
+      this.userImages = [];
+      if(getAllImagesSnapshot) getAllImagesSnapshot()
     }
   }
 });
