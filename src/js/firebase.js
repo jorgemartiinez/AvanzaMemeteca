@@ -11,10 +11,10 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_messagingSenderId,
   appId: import.meta.env.VITE_appId
 };
+console.log("🚀 ~ file: firebase.js ~ line 14 ~ firebaseConfig", firebaseConfig)
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
 
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);

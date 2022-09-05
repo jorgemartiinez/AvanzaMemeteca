@@ -29,7 +29,6 @@ const storeImages = useStoreImages();
 const imageArrayStoreRef =  computed( () => (props.getMethod === 'all') ? storeImages.images : storeImages.userImages)
 
 onMounted(() => {
-  console.log('on mounted')
     if(props.getMethod === 'all')
         storeImages.getAll();
     else if(props.getMethod === 'user')

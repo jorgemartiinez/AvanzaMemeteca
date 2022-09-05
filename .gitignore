@@ -27,3 +27,10 @@ coverage
 *.sln
 *.sw?
 .env
+firebase*.*
+.firebaserc
+firestore.*
+firebase-*
+storage.*
+*.rules
+*.cache
