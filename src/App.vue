@@ -25,7 +25,7 @@ onMounted(() => {
 
   <main class="container is-max-desktop px-2 py-4">
     <RouterView />
-    <a class="link mt-6" @click="$router.back" v-if="$router.name !== 'login'" >⬅️ Go Back</a>
+    <a class="link mt-6" @click="$router.back" v-if="$route.name !== 'login'" >⬅️ Go Back</a>
   </main>
 </template>
 
